@@ -11,6 +11,7 @@ import { CalendarIcon, Ship, FileText, Users, Clock } from 'lucide-react';
 import SignaturePad from 'react-signature-canvas';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useRef } from 'react';
+import jsPDF from 'jspdf';
 
 interface FormData {
   // Agency Section
@@ -91,6 +92,88 @@ function SignaturePadModal({ open, setOpen, onSave }: { open: boolean; setOpen: 
   );
 }
 
+// Fonction pour générer le PDF administratif
+function generatePDF(formData: any, signatureCapitaine: string | null, signaturePilote1: string | null, signaturePilote2: string | null) {
+  const doc = new jsPDF();
+  let y = 15;
+  doc.setFontSize(16);
+  doc.text('Bulletin de Pilotage', 105, y, { align: 'center' });
+  y += 10;
+  doc.setFontSize(12);
+  doc.text('Informations Générales', 14, y);
+  y += 8;
+  // Tableau des infos principales
+  const infos = [
+    ['Agence', formData.agence],
+    ['Numéro', formData.numero],
+    ['Navire', formData.navire],
+    ['Pavillon', formData.pavilion],
+    ['Ton. Brut', formData.tonBrut],
+    ['Ton. Net', formData.tonNet],
+    ['T.E avant', formData.teAvant],
+    ['T.E arrière', formData.teArriere],
+    ['Date', formData.date],
+    ['Pilote demandé', formData.piloteDemande],
+    ['Trajet', formData.trajet],
+    ['Section', formData.section],
+    ['Déhalage', formData.dehalage],
+    ['Heure Début', formData.heureDebut],
+    ['Heure Arrivée', formData.heureArrivee],
+    ['Secteur', formData.secteur],
+    ['Journée', formData.journee],
+    ['POB', formData.pob],
+    ['NP', formData.np],
+    ['DM', formData.dm],
+    ['AHC', formData.ahc],
+    ['Capitaine', formData.capitaine],
+    ['Pilote 1', formData.pilote1],
+    ['Pilote 2', formData.pilote2],
+  ];
+  infos.forEach(([label, value]) => {
+    doc.text(`${label} :`, 14, y);
+    doc.text(value || '', 60, y);
+    y += 7;
+    if (y > 270) { doc.addPage(); y = 15; }
+  });
+  y += 3;
+  doc.setFontSize(12);
+  doc.text('Observations :', 14, y);
+  y += 7;
+  doc.setFontSize(10);
+  // Gestion du saut de page pour les observations longues
+  const obsLines = doc.splitTextToSize(formData.observations || '', 180);
+  obsLines.forEach((line: string) => {
+    if (y > 270) { doc.addPage(); y = 15; }
+    doc.text(line, 14, y);
+    y += 7;
+  });
+  y += 10;
+  // Signatures
+  doc.setFontSize(12);
+  doc.text('Signatures :', 14, y);
+  y += 10;
+  // Contrôle de place avant chaque signature
+  if (signatureCapitaine) {
+    if (y + 25 > 280) { doc.addPage(); y = 15; }
+    doc.text('Capitaine :', 14, y);
+    doc.addImage(signatureCapitaine, 'PNG', 40, y - 7, 40, 20);
+    y += 25;
+  }
+  if (signaturePilote1) {
+    if (y + 25 > 280) { doc.addPage(); y = 15; }
+    doc.text('Pilote 1 :', 14, y);
+    doc.addImage(signaturePilote1, 'PNG', 40, y - 7, 40, 20);
+    y += 25;
+  }
+  if (signaturePilote2) {
+    if (y + 25 > 280) { doc.addPage(); y = 15; }
+    doc.text('Pilote 2 :', 14, y);
+    doc.addImage(signaturePilote2, 'PNG', 40, y - 7, 40, 20);
+    y += 25;
+  }
+  doc.save('bulletin_pilotage.pdf');
+}
+
 export default function Home() {
   const [formData, setFormData] = useState<FormData>({
     agence: '',
@@ -136,8 +219,7 @@ export default function Home() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    // Here you would typically submit to your backend
+    generatePDF(formData, signatureCapitaine, signaturePilote1, signaturePilote2);
   };
 
   return (
