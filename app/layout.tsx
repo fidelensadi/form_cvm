@@ -1,7 +1,16 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Nunito } from 'next/font/google';
 
+// Chargement de la police Nunito via Next.js font system (optimisé)
+const nunito = Nunito({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-nunito',
+  weight: ['300', '400', '500', '600', '700', '800'],
+});
+
+// Keep Inter as fallback
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
@@ -20,8 +29,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr">
-      <body className={inter.className}>{children}</body>
+    <html lang="fr" className={nunito.variable}>
+      <head>
+        {/* Alternative: Chargement de Nunito via CDN pour plus de variantes */}
+        <link href="https://fonts.cdnfonts.com/css/nunito" rel="stylesheet" />
+      </head>
+      <body className={`${nunito.className} font-nunito`}>{children}</body>
     </html>
   );
 }

@@ -94,86 +94,178 @@ function SignaturePadModal({ open, setOpen, onSave }: { open: boolean; setOpen: 
   );
 }
 
+// La fonction helper addPDFContent a été intégrée directement dans la fonction generatePDF
+
 // Fonction pour générer le PDF administratif
-function generatePDF(formData: any, signatureCapitaine: string | null, signaturePilote1: string | null, signaturePilote2: string | null) {
-  const doc = new jsPDF();
-  let y = 15;
-  doc.setFontSize(16);
-  doc.text('Bulletin de Pilotage', 105, y, { align: 'center' });
-  y += 10;
-  doc.setFontSize(12);
-  doc.text('Informations Générales', 14, y);
-  y += 8;
-  // Tableau des infos principales
-  const infos = [
-    ['Agence', formData.agence],
-    ['Numéro', formData.numero],
-    ['Navire', formData.navire],
-    ['Pavillon', formData.pavilion],
-    ['Ton. Brut', formData.tonBrut],
-    ['Ton. Net', formData.tonNet],
-    ['T.E avant', formData.teAvant],
-    ['T.E arrière', formData.teArriere],
-    ['Date', formData.date],
-    ['Pilote demandé', formData.piloteDemande],
-    ['Trajet', formData.trajet],
-    ['Section', formData.section],
-    ['Déhalage', formData.dehalage],
-    ['Heure Début', formData.heureDebut],
-    ['Heure Arrivée', formData.heureArrivee],
-    ['Secteur', formData.secteur],
-    ['Journée', formData.journee],
-    ['POB', formData.pob],
-    ['NP', formData.np],
-    ['DM', formData.dm],
-    ['AHC', formData.ahc],
-    ['Capitaine', formData.capitaine],
-    ['Pilote 1', formData.pilote1],
-    ['Pilote 2', formData.pilote2],
-  ];
-  infos.forEach(([label, value]) => {
-    doc.text(`${label} :`, 14, y);
-    doc.text(value || '', 60, y);
+async function generatePDF(formData: any, signatureCapitaine: string | null, signaturePilote1: string | null, signaturePilote2: string | null) {
+  try {
+    // Création du document PDF
+    const doc = new jsPDF();
+    let y = 15;
+    
+    try {
+      // Charger le logo de façon synchrone avec une promesse
+      const logoUrl = "https://cvm-sa.com/wp-content/uploads/2023/11/cropped-cvm-removebg-preview-1.png";
+      const img = document.createElement('img');
+      
+      await new Promise((resolve, reject) => {
+        img.onload = () => {
+          clearTimeout(timeout);
+          resolve(null);
+        };
+        
+        img.onerror = () => {
+          console.warn("Le logo n'a pas pu être chargé, continuons sans logo");
+          resolve(null);
+        };
+        
+        // Définir un délai maximum d'attente
+        const timeout = setTimeout(() => {
+          console.warn("Temps d'attente dépassé pour le chargement du logo");
+          resolve(null);
+        }, 2000);
+        
+        img.crossOrigin = 'Anonymous';
+        img.src = logoUrl;
+      });
+      
+      // Si l'image est chargée correctement, l'ajouter au PDF
+      if (img.complete && img.naturalWidth > 0) {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          const dataUrl = canvas.toDataURL('image/png');
+          
+          // Ajouter le logo au PDF
+          doc.addImage(
+            dataUrl, 
+            'PNG', 
+            (doc.internal.pageSize.width - 30) / 2, 
+            y - 10, 
+            30, 
+            30
+          );
+          
+          // Ajuster la position y après le logo
+          y += 25;
+          
+          // Titre principal et sous-titres
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(14);
+          doc.text('RÉPUBLIQUE DÉMOCRATIQUE DU CONGO', doc.internal.pageSize.width / 2, y, { align: 'center' });
+          y += 8;
+          
+          doc.setFontSize(12);
+          doc.text('CONGOLAISE DES VOIES MARITIMES', doc.internal.pageSize.width / 2, y, { align: 'center' });
+          y += 6;
+          doc.text('DIRECTION D\'EXPLOITATION', doc.internal.pageSize.width / 2, y, { align: 'center' });
+          y += 6;
+          doc.text('Sous-Direction du Pilotage', doc.internal.pageSize.width / 2, y, { align: 'center' });
+          y += 10;
+        }
+      }
+    } catch (err) {
+      console.error("Erreur lors du chargement du logo:", err);
+      // Continuer sans logo en cas d'erreur
+    }
+    
+    // Titre du document (après logo ou directement)
+    doc.setFontSize(16);
+    doc.text('Bulletin de Pilotage', doc.internal.pageSize.width / 2, y, { align: 'center' });
+    y += 10;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(12);
+    doc.text('Informations Générales', 14, y);
+    y += 8;
+  
+    // Ajout du contenu principal au PDF
+    // Tableau des infos principales
+    const infos = [
+      ['Agence', formData.agence],
+      ['Numéro', formData.numero],
+      ['Navire', formData.navire],
+      ['Pavillon', formData.pavilion],
+      ['Ton. Brut', formData.tonBrut],
+      ['Ton. Net', formData.tonNet],
+      ['T.E avant', formData.teAvant],
+      ['T.E arrière', formData.teArriere],
+      ['Date', formData.date],
+      ['Pilote demandé', formData.piloteDemande],
+      ['Trajet', formData.trajet],
+      ['Section', formData.section],
+      ['Déhalage', formData.dehalage],
+      ['Heure Début', formData.heureDebut],
+      ['Heure Arrivée', formData.heureArrivee],
+      ['Secteur', formData.secteur],
+      ['Journée', formData.journee],
+      ['POB', formData.pob],
+      ['NP', formData.np],
+      ['DM', formData.dm],
+      ['AHC', formData.ahc],
+      ['Capitaine', formData.capitaine],
+      ['Pilote 1', formData.pilote1],
+      ['Pilote 2', formData.pilote2],
+    ];
+
+    infos.forEach(([label, value]) => {
+      doc.text(`${label} :`, 14, y);
+      doc.text(value || '', 60, y);
+      y += 7;
+      if (y > 270) { doc.addPage(); y = 15; }
+    });
+
+    y += 3;
+    doc.setFontSize(12);
+    doc.text('Observations :', 14, y);
     y += 7;
-    if (y > 270) { doc.addPage(); y = 15; }
-  });
-  y += 3;
-  doc.setFontSize(12);
-  doc.text('Observations :', 14, y);
-  y += 7;
-  doc.setFontSize(10);
-  // Gestion du saut de page pour les observations longues
-  const obsLines = doc.splitTextToSize(formData.observations || '', 180);
-  obsLines.forEach((line: string) => {
-    if (y > 270) { doc.addPage(); y = 15; }
-    doc.text(line, 14, y);
-    y += 7;
-  });
-  y += 10;
-  // Signatures
-  doc.setFontSize(12);
-  doc.text('Signatures :', 14, y);
-  y += 10;
-  // Contrôle de place avant chaque signature
-  if (signatureCapitaine) {
-    if (y + 25 > 280) { doc.addPage(); y = 15; }
-    doc.text('Capitaine :', 14, y);
-    doc.addImage(signatureCapitaine, 'PNG', 40, y - 7, 40, 20);
-    y += 25;
+    doc.setFontSize(10);
+
+    // Gestion du saut de page pour les observations longues
+    const obsLines = doc.splitTextToSize(formData.observations || '', 180);
+    obsLines.forEach((line: string) => {
+      if (y > 270) { doc.addPage(); y = 15; }
+      doc.text(line, 14, y);
+      y += 7;
+    });
+
+    y += 10;
+    // Signatures
+    doc.setFontSize(12);
+    doc.text('Signatures :', 14, y);
+    y += 10;
+
+    // Contrôle de place avant chaque signature
+    if (signatureCapitaine) {
+      if (y + 25 > 280) { doc.addPage(); y = 15; }
+      doc.text('Capitaine :', 14, y);
+      doc.addImage(signatureCapitaine, 'PNG', 40, y - 7, 40, 20);
+      y += 25;
+    }
+
+    if (signaturePilote1) {
+      if (y + 25 > 280) { doc.addPage(); y = 15; }
+      doc.text('Pilote 1 :', 14, y);
+      doc.addImage(signaturePilote1, 'PNG', 40, y - 7, 40, 20);
+      y += 25;
+    }
+
+    if (signaturePilote2) {
+      if (y + 25 > 280) { doc.addPage(); y = 15; }
+      doc.text('Pilote 2 :', 14, y);
+      doc.addImage(signaturePilote2, 'PNG', 40, y - 7, 40, 20);
+      y += 25;
+    }
+
+    // Sauvegarder le PDF
+    doc.save('bulletin_pilotage.pdf');
+  } catch (error) {
+    console.error("Erreur lors de la génération du PDF:", error);
+    alert("Une erreur s'est produite lors de la génération du PDF. Veuillez réessayer.");
   }
-  if (signaturePilote1) {
-    if (y + 25 > 280) { doc.addPage(); y = 15; }
-    doc.text('Pilote 1 :', 14, y);
-    doc.addImage(signaturePilote1, 'PNG', 40, y - 7, 40, 20);
-    y += 25;
-  }
-  if (signaturePilote2) {
-    if (y + 25 > 280) { doc.addPage(); y = 15; }
-    doc.text('Pilote 2 :', 14, y);
-    doc.addImage(signaturePilote2, 'PNG', 40, y - 7, 40, 20);
-    y += 25;
-  }
-  doc.save('bulletin_pilotage.pdf');
 }
 
 export default function Home() {
@@ -222,6 +314,14 @@ export default function Home() {
     }
   }, [router]);
 
+  // Fonction pour gérer la déconnexion
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('isAuthenticated');
+      router.replace('/login');
+    }
+  };
+
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({
       ...prev,
@@ -231,9 +331,15 @@ export default function Home() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Ne génère le PDF que lorsqu'on est sur la dernière étape (Signatures)
+    // et que l'utilisateur a explicitement cliqué sur "Enregistrer"
     if (step === steps.length) {
-      const target = e.target as HTMLElement;
+      // Vérifie si l'élément qui a déclenché la soumission est bien le bouton d'enregistrement
+      const target = e.target as HTMLFormElement;
       const submitButton = target.querySelector('button[type="submit"]');
+      
+      // Si c'est bien le bouton Enregistrer qui a été cliqué
       if (submitButton && document.activeElement === submitButton) {
         generatePDF(formData, signatureCapitaine, signaturePilote1, signaturePilote2);
       }
@@ -249,12 +355,28 @@ export default function Home() {
   const [step, setStep] = useState(1);
 
   // Fonctions de navigation
-  const handleNext = () => setStep((s) => Math.min(s + 1, steps.length));
+  const handleNext = () => {
+    setStep((s) => Math.min(s + 1, steps.length));
+  };
   const handlePrev = () => setStep((s) => Math.max(s - 1, 1));
 
   return (
     <>
       <div className="min-h-screen bg-gray-50 p-6">
+        {/* Bouton de déconnexion en haut à droite */}
+        <div className="absolute top-4 right-6">
+          <button 
+            type="button" 
+            onClick={handleLogout}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center gap-2 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Déconnexion
+          </button>
+        </div>
+
         {/* Logo + Titre centré au-dessus de la card principale */}
         <div className="text-center mb-8">
           <div className="flex flex-col items-center mb-2">
@@ -572,7 +694,6 @@ export default function Home() {
                             </h3>
                             <div className="space-y-3 mb-4">
                               <div>
-                                <Label className="text-sm font-semibold text-gray-700">(1)</Label>
                                 <Input
                                   value={formData.pilote1}
                                   onChange={(e) => handleInputChange('pilote1', e.target.value)}
@@ -580,8 +701,16 @@ export default function Home() {
                                   placeholder="Nom du pilote 1"
                                 />
                               </div>
-                              <div>
-                                <Label className="text-sm font-semibold text-gray-700">(2)</Label>
+                              <div className="h-16 border-2 border-dashed border-gray-300 mt-2 flex items-center justify-center text-gray-500 text-sm cursor-pointer bg-gray-50" onClick={() => setOpenPilote1(true)}>
+                              {signaturePilote1 ? (
+                                <img src={signaturePilote1} alt="Signature Pilote 1" className="max-h-12 object-contain" />
+                              ) : (
+                                'Signature'
+                              )}
+                              </div>
+                            </div>
+                            <div className="space-y-3 mb-4">
+                            <div>
                                 <Input
                                   value={formData.pilote2}
                                   onChange={(e) => handleInputChange('pilote2', e.target.value)}
@@ -589,20 +718,13 @@ export default function Home() {
                                   placeholder="Nom du pilote 2"
                                 />
                               </div>
-                            </div>
-                            <div className="h-16 border-2 border-dashed border-gray-300 mt-2 flex items-center justify-center text-gray-500 text-sm cursor-pointer bg-gray-50" onClick={() => setOpenPilote1(true)}>
-                              {signaturePilote1 ? (
-                                <img src={signaturePilote1} alt="Signature Pilote 1" className="max-h-12 object-contain" />
-                              ) : (
-                                'Signature'
-                              )}
-                            </div>
                             <div className="h-16 border-2 border-dashed border-gray-300 mt-2 flex items-center justify-center text-gray-500 text-sm cursor-pointer bg-gray-50" onClick={() => setOpenPilote2(true)}>
                               {signaturePilote2 ? (
                                 <img src={signaturePilote2} alt="Signature Pilote 2" className="max-h-12 object-contain" />
                               ) : (
                                 'Signature'
                               )}
+                            </div>
                             </div>
                           </div>
                         </div>
@@ -613,7 +735,17 @@ export default function Home() {
                 <div className="flex justify-between mt-8">
                   <button type="button" onClick={handlePrev} disabled={step === 1} className="px-4 py-2 rounded bg-gray-200 text-gray-700 disabled:opacity-50">Précédent</button>
                   {step < steps.length ? (
-                    <button type="button" onClick={handleNext} className="px-4 py-2 rounded bg-blue-600 text-white">Suivant</button>
+                    <button 
+                      type="button" 
+                      onClick={(e) => {
+                        e.preventDefault(); // Empêche la propagation d'événements
+                        e.stopPropagation(); // Arrête la propagation vers d'autres handlers
+                        handleNext(); 
+                      }} 
+                      className="px-4 py-2 rounded bg-blue-600 text-white"
+                    >
+                      Suivant
+                    </button>
                   ) : (
                     <button type="submit" className="px-4 py-2 rounded bg-green-600 text-white">Enregistrer</button>
                   )}
